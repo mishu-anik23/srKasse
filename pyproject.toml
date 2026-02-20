@@ -1,0 +1,51 @@
+[project]
+name = "srkasse"
+version = "0.1.0"
+description = "srKasse API - multi-tenant FastAPI app for Sunrise Supermarket"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi[standard]",
+    "uvicorn[standard]",
+    "sqlalchemy[asyncio]",
+    "asyncpg",
+    "alembic",
+    "python-jose[cryptography]",
+    "passlib[bcrypt]",
+    "pydantic[email]",
+    "pydantic-settings",
+    "httpx",
+    "pytest",
+    "pytest-asyncio",
+    "aiosqlite",
+]
+
+[project.optional-dependencies]
+dev = [
+    "black",
+    "ruff",
+]
+
+[tool.uv]
+dev-dependencies = [
+    "pytest",
+    "pytest-asyncio",
+    "httpx",
+]
+
+[tool.black]
+line-length = 88
+target-version = ["py311"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.coverage.run]
+source = ["app"]
+omit = ["app/tests/*", "*/__init__.py"]
