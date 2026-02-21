@@ -72,17 +72,25 @@ async def test_multitenant_products_isolation(db_with_tenants) -> None:
     transport = ASGITransport(app=app)
     client_a = AsyncClient(transport=transport, base_url="http://test")
 
-    # Tenant A creates a product
+    # Tenant A creates a product (SKU schema: brand, category, subcategory, quantity, full_product_name)
     r = await client_a.post(
         "/api/products/",
-        json={"name": "Product A1", "sku": "SKU-A1", "unit_price": "10.50"},
+        json={
+            "brand_code": "001",
+            "category_code": "01",
+            "subcategory_code": "1",
+            "quantity_code": "1",
+            "full_product_name": "Product A1",
+            "unit_price": "10.50",
+        },
     )
     assert r.status_code == 200, r.text
     list_a = await client_a.get("/api/products/")
     assert list_a.status_code == 200
     products_a = list_a.json()
     assert len(products_a) == 1
-    assert products_a[0]["sku"] == "SKU-A1"
+    assert products_a[0]["full_product_name"] == "Product A1"
+    assert "human_sku" in products_a[0]
 
     # Client as tenant B
     app.dependency_overrides[get_current_user] = get_current_user_b
@@ -92,7 +100,14 @@ async def test_multitenant_products_isolation(db_with_tenants) -> None:
     # Tenant B creates a different product
     r2 = await client_b.post(
         "/api/products/",
-        json={"name": "Product B1", "sku": "SKU-B1", "unit_price": "99.00"},
+        json={
+            "brand_code": "002",
+            "category_code": "02",
+            "subcategory_code": "1",
+            "quantity_code": "2",
+            "full_product_name": "Product B1",
+            "unit_price": "99.00",
+        },
     )
     assert r2.status_code == 200, r2.text
 
@@ -101,8 +116,8 @@ async def test_multitenant_products_isolation(db_with_tenants) -> None:
     assert list_b.status_code == 200
     products_b = list_b.json()
     assert len(products_b) == 1
-    assert products_b[0]["sku"] == "SKU-B1"
-    assert all(p["sku"] != "SKU-A1" for p in products_b)
+    assert products_b[0]["full_product_name"] == "Product B1"
+    assert all(p["full_product_name"] != "Product A1" for p in products_b)
 
     # Clean overrides
     app.dependency_overrides.pop(get_session, None)
